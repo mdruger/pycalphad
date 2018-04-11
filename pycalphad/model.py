@@ -36,6 +36,11 @@ class Model(object):
     parameters : dict
         Optional dictionary of parameters to be substituted in the model.
         This will overwrite parameters specified in the database
+    reference_contributions : list
+        Which contributions to the Model are taken as reference. Users wanting
+        to add or remove contributions to the reference state can change this at
+        any time. Defaults to the surface of reference, magnetic and Einstein
+        energies.
 
     Methods
     -------
@@ -50,15 +55,16 @@ class Model(object):
     # and make self.models inconsistent with contributions.
     # Note that we include atomic ordering last since it uses self.models
     # to figure out its contribution.
-    contributions = [('ref', 'reference_energy'), ('idmix', 'ideal_mixing_energy'),
+    contributions = [('surf_ref', 'surface_of_reference_energy'), ('idmix', 'ideal_mixing_energy'),
                      ('xsmix', 'excess_mixing_energy'), ('mag', 'magnetic_energy'),
                      ('2st', 'twostate_energy'), ('ein', 'einstein_energy'),
                      ('ord', 'atomic_ordering_energy')]
 
-    def __init__(self, dbe, comps, phase_name, parameters=None):
+    def __init__(self, dbe, comps, phase_name, parameters=None, reference_contributions=None):
         self.components = set()
         self.constituents = []
         self.phase_name = phase_name.upper()
+        self.reference_contributions = reference_contributions or ['surf_ref', 'mag', 'ein']
         phase = dbe.phases[self.phase_name]
         self.site_ratios = list(phase.sublattices)
         for idx, sublattice in enumerate(phase.constituents):
@@ -230,12 +236,13 @@ class Model(object):
 
     #pylint: disable=C0103
     # These are standard abbreviations from Thermo-Calc for these quantities
+    reference_energy = REF = property(lambda self: Add(*list([self.models[contrib] for contrib in self.reference_contributions])))
     energy = GM = property(lambda self: self.ast)
     entropy = SM = property(lambda self: -self.GM.diff(v.T))
     enthalpy = HM = property(lambda self: self.GM - v.T*self.GM.diff(v.T))
     heat_capacity = CPM = property(lambda self: -v.T*self.GM.diff(v.T, v.T))
     #pylint: enable=C0103
-    mixing_energy = GM_MIX = property(lambda self: self.GM - self.models['ref'])
+    mixing_energy = GM_MIX = property(lambda self: self.GM - self.REF)
     mixing_enthalpy = HM_MIX = \
         property(lambda self: self.GM_MIX - v.T*self.GM_MIX.diff(v.T))
     mixing_entropy = SM_MIX = property(lambda self: -self.GM_MIX.diff(v.T))
@@ -452,7 +459,7 @@ class Model(object):
             rk_terms.append(mixing_term * param['parameter'])
         return Add(*rk_terms)
 
-    def reference_energy(self, dbe):
+    def surface_of_reference_energy(self, dbe):
         """
         Returns the weighted average of the endmember energies
         in symbolic form.
