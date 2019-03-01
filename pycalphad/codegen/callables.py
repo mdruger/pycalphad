@@ -87,6 +87,8 @@ def build_callables(dbf, comps, phases, conds=None, model=None, parameters=None,
         'internal_cons_hess': {},
         'mp_cons': {},
         'mp_jac': {},
+        'paramgradfuncs': {},
+        'paramjacfuncs': {}
     }
 
     models = unpack_kwarg(model, default_arg=Model)
@@ -129,10 +131,14 @@ def build_callables(dbf, comps, phases, conds=None, model=None, parameters=None,
 
         if callables.get('callables', {}).get(name, False) and \
                 ((not build_gradients) or callables.get('grad_callables', {}).get(name, False)) and \
-                ((not build_hessians) or callables.get('hess_callables', {}).get(name, False)):
+                ((not build_hessians) or callables.get('hess_callables', {}).get(name, False)) and \
+                callables.get('paramgradfuncs', {}).get(name, False) and \
+                callables.get('paramjacfuncs', {}).get(name, False):
             _callables['callables'][name] = callables['callables'][name]
             _callables['grad_callables'][name] = callables['grad_callables'].get(name, None)
             _callables['hess_callables'][name] = callables['hess_callables'].get(name, None)
+            _callables['paramgradfuncs'][name] = callables['paramgradfuncs'].get(name, None)
+            _callables['paramjacfuncs'][name] = callables['paramjacfuncs'].get(name, None)
         else:
             # Build the callables of the output
             # Only force undefineds to zero if we're not overriding them
@@ -141,10 +147,12 @@ def build_callables(dbf, comps, phases, conds=None, model=None, parameters=None,
             out = out.xreplace(dict(zip(undefs, undef_vals)))
             build_output = build_functions(out, tuple(state_variables + site_fracs), parameters=param_symbols,
                                            include_grad=build_gradients, include_hess=build_hessians)
-            cf, gf, hf = build_output.func, build_output.grad, build_output.hess
+            cf, gf, hf, pg, pgd = build_output.func, build_output.grad, build_output.hess, build_output.param_grad, build_output.param_jac
             _callables['callables'][name] = cf
             _callables['grad_callables'][name] = gf
             _callables['hess_callables'][name] = hf
+            _callables['paramgradfuncs'][name] = pg
+            _callables['paramjacfuncs'][name] = pgd
 
         if callables.get('massfuncs', {}).get(name, False) and \
                 ((not build_gradients) or callables.get('massgradfuncs', {}).get(name, False)) and \
@@ -155,11 +163,11 @@ def build_callables(dbf, comps, phases, conds=None, model=None, parameters=None,
         else:
             # Build the callables for mass
             # TODO: In principle, we should also check for undefs in mod.moles()
-            mcf, mgf, mhf = zip(*[build_functions(mod.moles(el), state_variables + site_fracs,
-                                                  include_obj=True,
-                                                  include_grad=build_gradients,
-                                                  include_hess=build_hessians,
-                                                  parameters=param_symbols)
+            mcf, mgf, mhf, _, __ = zip(*[build_functions(mod.moles(el), state_variables + site_fracs,
+                                                         include_obj=True,
+                                                         include_grad=build_gradients,
+                                                         include_hess=build_hessians,
+                                                         parameters=param_symbols)
                                   for el in pure_elements])
             if all(x is None for x in mgf):
                 mgf = None
@@ -195,6 +203,8 @@ def build_callables(dbf, comps, phases, conds=None, model=None, parameters=None,
                                                   _callables['internal_cons_hess'][name],
                                                   _callables['mp_cons'][name],
                                                   _callables['mp_jac'][name],
+                                                  _callables['paramgradfuncs'][name],
+                                                  _callables['paramjacfuncs'][name],
                                                   num_internal_cons,
                                                   num_multiphase_cons)
         if verbose:

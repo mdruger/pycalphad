@@ -82,7 +82,7 @@ class AutowrapFunction(PickleableFunction):
         return result
 
 
-BuildFunctionsResult = namedtuple('BuildFunctionsResult', ['func', 'grad', 'hess'])
+BuildFunctionsResult = namedtuple('BuildFunctionsResult', ['func', 'grad', 'hess', 'param_grad', 'param_jac'])
 
 
 @cacheit
@@ -122,6 +122,8 @@ def build_functions(sympy_graph, variables, wrt=None, include_obj=True, include_
     func = None
     grad = None
     hess = None
+    pg = None
+    pgd = None
     m = Symbol('veclen', integer=True)
     i = Idx(Symbol('vecidx', integer=True), m)
     y = IndexedBase(Symbol('outp'))
@@ -160,6 +162,12 @@ def build_functions(sympy_graph, variables, wrt=None, include_obj=True, include_
         sympy_graph_nobroadcast = sympy_graph.xreplace(nobroadcast)
         with CompileLock:
             grad_diffs = list(sympy_graph_nobroadcast.diff(nobroadcast[i]) for i in wrt)
+        if len(parameters) > 0:
+            with CompileLock:
+                param_diffs = list(sympy_graph_nobroadcast.diff(nobroadcast[i]) for i in parameters)
+                param_grad_diffs = [[i.diff(x) for i in grad_diffs] for x in parameters]
+            pg = AutowrapFunction(diffargs, ImmutableMatrix(param_diffs))
+            pgd = AutowrapFunction(diffargs, ImmutableMatrix(param_grad_diffs))
         if include_grad:
             grad = AutowrapFunction(diffargs, ImmutableMatrix(grad_diffs))
         if include_hess:
@@ -169,4 +177,4 @@ def build_functions(sympy_graph, variables, wrt=None, include_obj=True, include_
     if len(restup) == 1:
         return restup[0]
     else:
-        return BuildFunctionsResult(func=func, grad=grad, hess=hess)
+        return BuildFunctionsResult(func=func, grad=grad, hess=hess, param_grad=pg, param_jac=pgd)

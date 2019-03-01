@@ -15,6 +15,8 @@ cdef public class PhaseRecord(object)[type PhaseRecordType, object PhaseRecordOb
     cdef func_t** _masses
     cdef func_novec_t** _massgrads
     cdef func_novec_t** _masshessians
+    cdef func_novec_t* _parameter_grad
+    cdef func_novec_t* _parameter_jac
     cdef public object _ofunc
     cdef public object _gfunc
     cdef public object _hfunc
@@ -28,6 +30,8 @@ cdef public class PhaseRecord(object)[type PhaseRecordType, object PhaseRecordOb
     cdef public object _massfuncs
     cdef public object _massgradfuncs
     cdef public object _masshessianfuncs
+    cdef public object _paramgradfunc
+    cdef public object _paramjacfunc
     cdef public object variables
     cdef public object state_variables
     cdef public object components
@@ -47,4 +51,5 @@ cdef public class PhaseRecord(object)[type PhaseRecordType, object PhaseRecordOb
     cpdef void mass_obj(self, double[::1] out, double[:, ::1] dof, int comp_idx) nogil
     cpdef void mass_grad(self, double[::1] out, double[::1] dof, int comp_idx) nogil
     cpdef void mass_hess(self, double[:,::1] out, double[::1] dof, int comp_idx) nogil
-
+    cpdef void parameter_gradient(self, double[::1] out, double[::1] dof, double[::1] parameters) nogil
+    cpdef void parameter_jacobian(self, double[:,::1] out, double[::1] dof, double[::1] parameters) nogil
