@@ -10,7 +10,7 @@ chmod +x miniconda.sh
 echo ". $HOME/miniconda2/etc/profile.d/conda.sh" >> $HOME/.bashrc
 . $HOME/miniconda2/etc/profile.d/conda.sh
 conda update --yes conda
-conda create --yes -n condaenv python=$TRAVIS_PYTHON_VERSION
-conda install --yes -n condaenv pip
 conda config --add channels conda-forge
+conda create --yes -n condaenv python=$TRAVIS_PYTHON_VERSION
+conda install --yes -n condaenv pip conda-build
 echo "!!! Exiting travis_legacy_deps.sh"
