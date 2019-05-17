@@ -33,14 +33,14 @@ install:
   - "conda create --yes -n condaenv python=%PYTHON_VERSION%"
   - "activate condaenv"
   # workaround for conda-forge/hdf5-feedstock#41
-  - "conda install --yes -n condaenv hdf5"
   - "conda config --add channels conda-forge"
   - "conda config --add channels msys2"
   - "conda config --add channels pycalphad"
+  - "conda-build conda_recipe meta.yaml"
   # install pycalphad and dependencies
-  - "conda install --yes -n condaenv --quiet pip setuptools nose numpy pandas scipy sympy pyparsing matplotlib xarray dask dill 'tinydb>=3.8' cython cyipopt m2w64-toolchain libpython"
-  - "pip install -e ."
-
+  - "conda install --yes --quiet --use-local -n condaenv  pycalphad"
+  - "conda install --yes --quiet nose"
+  - "conda list"
 build: false
 
 test_script:
