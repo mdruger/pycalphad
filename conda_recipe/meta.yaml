@@ -18,8 +18,9 @@ source:
 
 requirements:
   build:
+    - {{ compiler('c') }}
+  host:
     - python
-    - libpython # [win]
     - setuptools
     - matplotlib
     - pandas
@@ -36,12 +37,10 @@ requirements:
     - dill
     - cython >=0.24
     - cyipopt
-    - m2w64-toolchain # [win]
 
   run:
+    - {{ compiler('c') }}
     - python
-    - libpython # [win]
-    - gcc # [osx or linux]
     - matplotlib
     - pandas
     - xarray >=0.11.2
@@ -55,10 +54,9 @@ requirements:
     - cython >=0.24
     - dill
     - cyipopt
-    - m2w64-toolchain # [win]
 
 build:
-  script: python setup.py build_ext --compiler=mingw32 && python setup.py install --single-version-externally-managed --record=record.txt
+  script: python setup.py install --single-version-externally-managed --record=record.txt
 
 test:
   # Python imports
