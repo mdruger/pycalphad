@@ -41,7 +41,7 @@ install:
 script:
   - |
       echo "!!! pip installing test packages"
-      pip install sphinx sphinx_rtd_theme coveralls ipython
+      pip install sphinx sphinx_rtd_theme coveralls ipython nose coverage
       echo "!!! conda list output"
       conda list
       echo "!!! running nosetests"
